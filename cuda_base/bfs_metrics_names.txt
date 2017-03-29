@@ -1,0 +1,3 @@
+l1_cache_local_hit_rate
+ipc
+gld_requested_throughput

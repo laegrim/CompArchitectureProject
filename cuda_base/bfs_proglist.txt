@@ -1,0 +1,1 @@
+./bfs -i /home/aq10/Experiments/Parboil/datasets/bfs/small.dat -o result.dat

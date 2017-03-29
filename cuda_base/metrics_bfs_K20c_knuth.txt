@@ -1,0 +1,43 @@
+"Tesla K20c (0)","BFS_kernel(int*, int*, int2*, int2*, int*, int*, int, int*, int, int)",817,"l1_cache_local_hit_rate","L1 Local Hit Rate",0.000000%,0.000000%,0.000000%
+"Tesla K20c (0)","BFS_kernel(int*, int*, int2*, int2*, int*, int*, int, int*, int, int)",817,"ipc","Executed IPC",0.053547,0.409528,0.204060
+"Tesla K20c (0)","BFS_kernel(int*, int*, int2*, int2*, int*, int*, int, int*, int, int)",817,"gld_requested_throughput","Requested Global Load Throughput",967.117000KB/s,225.517627MB/s,73.154921MB/s
+"Tesla K20c (0)","BFS_kernel(int*, int*, int2*, int2*, int*, int*, int, int*, int, int)",817,"gst_requested_throughput","Requested Global Store Throughput",483.558000KB/s,149.412423MB/s,48.759215MB/s
+"Tesla K20c (0)","BFS_kernel(int*, int*, int2*, int2*, int*, int*, int, int*, int, int)",817,"ipc_instance","Executed IPC",0.053554,0.418370,0.206399
+"Tesla K20c (0)","BFS_kernel(int*, int*, int2*, int2*, int*, int*, int, int*, int, int)",817,"global_replay_overhead","Global Memory Replay Overhead",0.000000,0.138720,0.086494
+"Tesla K20c (0)","BFS_kernel(int*, int*, int2*, int2*, int*, int*, int, int*, int, int)",817,"tex_cache_throughput","Texture Cache Throughput",0.000000B/s,658.563613MB/s,207.216709MB/s
+"Tesla K20c (0)","BFS_kernel(int*, int*, int2*, int2*, int*, int*, int, int*, int, int)",817,"dram_read_throughput","Device Memory Read Throughput",170.958904MB/s,4.662293GB/s,1.597215GB/s
+"Tesla K20c (0)","BFS_kernel(int*, int*, int2*, int2*, int*, int*, int, int*, int, int)",817,"gst_throughput","Global Store Throughput",3.853564MB/s,685.666965MB/s,217.503497MB/s
+"Tesla K20c (0)","BFS_kernel(int*, int*, int2*, int2*, int*, int*, int, int*, int, int)",817,"gld_throughput","Global Load Throughput",7.707129MB/s,1.246567GB/s,410.710499MB/s
+"Tesla K20c (0)","BFS_kernel(int*, int*, int2*, int2*, int*, int*, int, int*, int, int)",817,"local_replay_overhead","Local Memory Cache Replay Overhead",0.000000,0.000000,0.000000
+"Tesla K20c (0)","BFS_kernel(int*, int*, int2*, int2*, int*, int*, int, int*, int, int)",817,"l2_l1_read_hit_rate","L2 Hit Rate (L1 Reads)",0.000000%,28.325991%,17.515239%
+"Tesla K20c (0)","BFS_kernel(int*, int*, int2*, int2*, int*, int*, int, int*, int, int)",817,"l2_l1_read_throughput","L2 Throughput (L1 Reads)",7.722007MB/s,1.293138GB/s,420.985154MB/s
+"Tesla K20c (0)","BFS_kernel(int*, int*, int2*, int2*, int*, int*, int, int*, int, int)",817,"l2_texture_read_throughput","L2 Throughput (Texture Reads)",4.640371MB/s,1.604851GB/s,484.793521MB/s
+"Tesla K20c (0)","BFS_kernel(int*, int*, int2*, int2*, int*, int*, int, int*, int, int)",817,"local_memory_overhead","Local Memory Overhead",0.000000%,9.523810%,2.100615%
+"Tesla K20c (0)","BFS_kernel(int*, int*, int2*, int2*, int*, int*, int, int*, int, int)",817,"issued_ipc","Issued IPC",0.076368,0.561219,0.295411
+"Tesla K20c (0)","BFS_kernel(int*, int*, int2*, int2*, int*, int*, int, int*, int, int)",817,"issue_slot_utilization","Issue Slot Utilization",1.556671%,13.771675%,6.626477%
+"Tesla K20c (0)","BFS_kernel(int*, int*, int2*, int2*, int*, int*, int, int*, int, int)",817,"local_load_transactions_per_request","Local Memory Load Transactions Per Request",0.000000,0.000000,0.000000
+"Tesla K20c (0)","BFS_kernel(int*, int*, int2*, int2*, int*, int*, int, int*, int, int)",817,"local_store_transactions_per_request","Local Memory Store Transactions Per Request",0.000000,0.000000,0.000000
+"Tesla K20c (0)","BFS_kernel(int*, int*, int2*, int2*, int*, int*, int, int*, int, int)",817,"local_load_transactions","Local Load Transactions",0,0,0
+"Tesla K20c (0)","BFS_kernel(int*, int*, int2*, int2*, int*, int*, int, int*, int, int)",817,"local_store_transactions","Local Store Transactions",0,0,0
+"Tesla K20c (0)","BFS_kernel(int*, int*, int2*, int2*, int*, int*, int, int*, int, int)",817,"dram_read_transactions","Device Memory Read Transactions",27,8366,2438
+"Tesla K20c (0)","BFS_kernel(int*, int*, int2*, int2*, int*, int*, int, int*, int, int)",817,"dram_write_transactions","Device Memory Write Transactions",6,6753,1914
+"Tesla K20c (0)","BFS_kernel(int*, int*, int2*, int2*, int*, int*, int, int*, int, int)",817,"l2_read_transactions","L2 Read Transactions",46,9037,2514
+"Tesla K20c (0)","BFS_kernel(int*, int*, int2*, int2*, int*, int*, int, int*, int, int)",817,"l2_write_transactions","L2 Write Transactions",9,4963,1379
+"Tesla K20c (0)","BFS_kernel(int*, int*, int2*, int2*, int*, int*, int, int*, int, int)",817,"local_load_throughput","Local Memory Load Throughput",0.000000B/s,0.000000B/s,0.000000B/s
+"Tesla K20c (0)","BFS_kernel(int*, int*, int2*, int2*, int*, int*, int, int*, int, int)",817,"local_store_throughput","Local Memory Store Throughput",0.000000B/s,20.304568MB/s,5.610874MB/s
+"Tesla K20c (0)","BFS_kernel(int*, int*, int2*, int2*, int*, int*, int, int*, int, int)",817,"l2_read_throughput","L2 Throughput (Reads)",111.255975MB/s,5.029338GB/s,1.611772GB/s
+"Tesla K20c (0)","BFS_kernel(int*, int*, int2*, int2*, int*, int*, int, int*, int, int)",817,"sysmem_write_throughput","System Memory Write Throughput",0.000000B/s,21.238266MB/s,4.861019MB/s
+"Tesla K20c (0)","BFS_kernel(int*, int*, int2*, int2*, int*, int*, int, int*, int, int)",817,"ldst_issued","Issued Load/Store Instructions",30,23727,5976
+"Tesla K20c (0)","BFS_kernel(int*, int*, int2*, int2*, int*, int*, int, int*, int, int)",817,"ldst_executed","Executed Load/Store Instructions",28,12799,2974
+"Tesla K20c (0)","BFS_kernel(int*, int*, int2*, int2*, int*, int*, int, int*, int, int)",817,"stall_inst_fetch","Issue Stall Reasons (Instructions Fetch)",0.823117%,18.696121%,4.234042%
+"Tesla K20c (0)","BFS_kernel(int*, int*, int2*, int2*, int*, int*, int, int*, int, int)",817,"stall_data_request","Issue Stall Reasons (Data Request)",0.000000%,20.012154%,9.150670%
+"Tesla K20c (0)","BFS_kernel(int*, int*, int2*, int2*, int*, int*, int, int*, int, int)",817,"stall_texture","Issue Stall Reasons (Texture)",0.794981%,6.960746%,3.570476%
+"Tesla K20c (0)","BFS_kernel(int*, int*, int2*, int2*, int*, int*, int, int*, int, int)",817,"stall_other","Issue Stall Reasons (Other)",0.311464%,2.098457%,0.923485%
+"Tesla K20c (0)","BFS_kernel(int*, int*, int2*, int2*, int*, int*, int, int*, int, int)",817,"l2_utilization","L2 Cache Utilization","Low (1)","Low (1)","Low (1)"
+"Tesla K20c (0)","BFS_kernel(int*, int*, int2*, int2*, int*, int*, int, int*, int, int)",817,"tex_utilization","Texture Cache Utilization","Idle (0)","Low (1)","Idle (0)"
+"Tesla K20c (0)","BFS_kernel(int*, int*, int2*, int2*, int*, int*, int, int*, int, int)",817,"dram_utilization","Device Memory Utilization","Low (1)","Low (1)","Low (1)"
+"Tesla K20c (0)","BFS_kernel(int*, int*, int2*, int2*, int*, int*, int, int*, int, int)",817,"ldst_fu_utilization","Load/Store Function Unit Utilization","Low (1)","Mid (4)","Low (1)"
+"Tesla K20c (0)","BFS_kernel(int*, int*, int2*, int2*, int*, int*, int, int*, int, int)",817,"alu_fu_utilization","Arithmetic Function Unit Utilization","Low (1)","Low (1)","Low (1)"
+"Tesla K20c (0)","BFS_kernel(int*, int*, int2*, int2*, int*, int*, int, int*, int, int)",817,"inst_issued","Instructions Issued",765,52999,12910
+"Tesla K20c (0)","BFS_kernel(int*, int*, int2*, int2*, int*, int*, int, int*, int, int)",817,"inst_compute_ld_st","Load/Store Instructions",526,81704,19496
+"Tesla K20c (0)","BFS_kernel(int*, int*, int2*, int2*, int*, int*, int, int*, int, int)",817,"inst_misc","Misc Instructions",10764,180651,42844
