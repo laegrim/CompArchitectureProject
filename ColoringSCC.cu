@@ -15,6 +15,24 @@ int main(int argc, char*argv[]){
 	//check command line for arguments; we need a graph for input
 	if (argc != 2) {fprintf(stderr, "usage: %s graph_file\n", argv[0]); exit(-1);}
 	
+	//read the graph from the file, creating an adjacency matrix as representation
+	//Graph file should be formatted as a multiline adjancency list, and the first
+	//line should be the number of nodes in the graph
+	int num_nodes;
+
+	fp = fopen(argv[1], "r");
+	if (!fp) {fprintf(stderr, "Error Reading Graph File"); exit(-1);}
+
+	fscanf(fp, "%d", &num_nodes);
+	
+	int ** h_graph = (int **) malloc(sizeof(int *) * num_nodes);
+
+	int start, degree;
+	for (int i = 0; i < num_nodes; i++){
+		fscanf(fp, "%d %d", &start, &degree);
+		h_graph[start] = (int *) malloc(sizeof(int) * degree);
+		for (int i = 0; i < degree; i++) {fscanf(fp, "%d", &h_graph[start][i]);}
+	}
 	//Do some preprocessing and error checking here on the incoming graph
 	
 	
@@ -35,10 +53,11 @@ int main(int argc, char*argv[]){
 	gettimeofday(&allend, NULL);
 
 	//Print the Times
-
+	double all_runtime = allend.tv_sec + allend.tv_usec / 1000000.0 - allstart.tv_sec - allstart.tv_usec / 1000000.0;
+	double kruntime = kend.tv_sec + kend.tv_usec / 1000000.0 - kstart.tv_sec - kstart.tv_usec / 1000000.0;
 
 	//Verify the Results
-
+	
 
 	//Free the memory
 
