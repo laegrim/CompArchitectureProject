@@ -61,25 +61,55 @@ int main(int argc, char*argv[]){
 	//Graph file should be formatted as a multiline adjancency list, and the first
 	//line should be the number of nodes in the graph
 	int num_nodes;
+	int num_edges;
 
 	FILE * fp = fopen(argv[1], "r");
 	if (!fp) {fprintf(stderr, "Error Reading Graph File"); exit(-1);}
-
-	fscanf(fp, "%d", &num_nodes); //first line should be the number of nodes
+	
+	char * line = NULL;
+	size_t len = 0;
+	ssize_t read;
+	
+	//need to get through the header
+	//which has 7 lines
+	for (int i = 0; i < 7; i ++) {
+		if (!(read=getline(&line, &len, fp))) {
+			fprintf(stderr, "Error Reading Graph File"); 
+			exit(-1);
+		}
+	} 
+	
+	//get the number of nodes and edges
+	fscanf(fp, "p sp %d %d", &num_nodes, &num_edges); 
 	
 	Node * graph = (Node *) malloc(sizeof(Node) * num_nodes);
-
-	int source, degree, successor;
+	//get the number of degrees on each edge
+	int source, dest, weight;
+	int * degree = (int * ) malloc(sizeof(int) * num_nodes);
+	for (int i = 0; i < num_nodes; i++) {degree[i] = 0;}
+	for (int i = 0; i < num_edges; i++){
+		fscanf(fp, "a %d %*d %*d", &source);
+		degree[source]++;
+	}		
+	rewind(fp);
+	//need to get through the header
+        //which has 7 lines
+        for (int i = 0; i < 8; i ++) {
+		if (!(read=getline(&line, &len, fp))) {
+			fprintf(stderr, "Error Reading Graph File"); 
+			exit(-1);
+		}
+	}
 	for (int i = 0; i < num_nodes; i++){
-		fscanf(fp, "%d %d", &source, &degree);
-		graph[source].out_degree = degree;
-		graph[source].successors = (int *) malloc(sizeof(int) * degree);
-		for (int j = 0; j < degree; j++) {
-			fscanf(fp, "%d", &successor);
-			graph[source].successors[j] = successor;
+		graph[source].out_degree = degree[i];
+		graph[source].successors = (int *) malloc(sizeof(int) * degree[i]);
+		for (int j = 0; j < degree[i]; j++) {
+			fscanf(fp, "a %*d %d %*d", &dest);
+			graph[source].successors[j] = dest;
 		}
 	}
 	fclose(fp);
+	free(degree);
 
 	for (int i = 0; i < num_nodes; i++){
 		graph[i].onstack = false;
