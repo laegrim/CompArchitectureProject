@@ -70,46 +70,50 @@ int main(int argc, char*argv[]){
 	size_t len = 0;
 	ssize_t read;
 	
-	//need to get through the header
-	//which has 7 lines
-	for (int i = 0; i < 7; i ++) {
-		if (!(read=getline(&line, &len, fp))) {
-			fprintf(stderr, "Error Reading Graph File"); 
-			exit(-1);
-		}
-	} 
-	
-	//get the number of nodes and edges
-	fscanf(fp, "p sp %d %d", &num_nodes, &num_edges); 
-	
-	Node * graph = (Node *) malloc(sizeof(Node) * num_nodes);
+		
+	Node * graph;
 	//get the number of degrees on each edge
-	int source, dest, weight;
-	int * degree = (int * ) malloc(sizeof(int) * num_nodes);
-	for (int i = 0; i < num_nodes; i++) {degree[i] = 0;}
-	for (int i = 0; i < num_edges; i++){
-		fscanf(fp, "a %d %*d %*d", &source);
-		degree[source]++;
+	int source, dest;
+	
+	//initialize based on header in graph file and get the degree of each node
+	while((read=getline(&line, &len, fp))){
+		//ignore header lines
+		if (line[0] == 'p'){
+			//this line has the total number of nodes and edges, we can make an empty graph
+			sscanf(line, "p sp %d %d", &num_nodes, &num_edges);
+			graph = (Node *) malloc(sizeof(Node) * num_nodes);
+			for (int i = 0; i < num_nodes; i++) {graph[i].out_degree = 0;}
+		}
+		else if (line[0] == 'a'){
+			//now we know how much memory to allocate for each node
+			sscanf(line, "a %d %*d %*d", &source);
+			graph[source].out_degree++;
+			}
 	}		
 	rewind(fp);
-	//need to get through the header
-        //which has 7 lines
-        for (int i = 0; i < 8; i ++) {
-		if (!(read=getline(&line, &len, fp))) {
-			fprintf(stderr, "Error Reading Graph File"); 
-			exit(-1);
-		}
-	}
 	for (int i = 0; i < num_nodes; i++){
-		graph[source].out_degree = degree[i];
-		graph[source].successors = (int *) malloc(sizeof(int) * degree[i]);
-		for (int j = 0; j < degree[i]; j++) {
-			fscanf(fp, "a %*d %d %*d", &dest);
-			graph[source].successors[j] = dest;
+		//allocate the memory for each node
+		graph[i].successors = (int *) malloc(sizeof(int) * graph[i].out_degree);
+	}
+	int c, s = 0;
+	//record edges in the graph structure
+	while((read=getline(&line, &len, fp))){
+		if (line[0] == 'a'){
+			sscanf(line, "a %d %d %*d", &source, &dest);
+			if (source == s){
+				graph[source].successors[c] = dest;
+				c ++;
+			}
+			else {
+				s = source;
+				c = 0;
+				graph[source].successors[c] = dest;
+				c++;
+			}
 		}
 	}
+
 	fclose(fp);
-	free(degree);
 
 	for (int i = 0; i < num_nodes; i++){
 		graph[i].onstack = false;
