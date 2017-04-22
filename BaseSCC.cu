@@ -18,7 +18,7 @@ int main(int argc, char*argv[]){
 	printf("Coloring SCC v1.0\n");
 	
 	//check command line for arguments; we need a graph for input
-	if (argc != 2) {fprintf(stderr, "usage: %s graph_file\n", argv[0]); exit(-1);}
+	if (argc != 2 and argc != 3) {fprintf(stderr, "usage: %s <graph_file> <output_file>(optional)\n", argv[0]); exit(-1);}
 	
 	//read the graph from the file, creating an adjacency matrix as representation
 	//Graph file should be formatted as a multiline adjancency list, and the first
@@ -32,7 +32,7 @@ int main(int argc, char*argv[]){
 	
 	Node * h_graph = (Node *) malloc(sizeof(Node) * num_nodes);
 
-	int start, degree;
+	int node, degree, predecessor;
 	for (int i = 0; i < num_nodes; i++){
 		fscanf(fp, "%d %d", &start, &degree);
 		h_graph[start].in_degree = degree
