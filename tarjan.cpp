@@ -99,7 +99,8 @@ int main(int argc, char*argv[]){
 		//allocate the memory for each node
 		graph[i].successors = (int *) malloc(sizeof(int) * graph[i].out_degree);
 	}
-	int c, s = 0;
+	int s = 0;
+	int c = 0;
 	//record edges in the graph structure
 	while((read=getline(&line, &len, fp)) != -1){
 		if (line[0] == 'a'){
