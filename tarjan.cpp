@@ -71,25 +71,29 @@ int main(int argc, char*argv[]){
 	ssize_t read;
 	
 		
-	Node * graph;
+	Node * graph = NULL;
 	//get the number of degrees on each edge
 	int source, dest;
 	
 	//initialize based on header in graph file and get the degree of each node
-	while((read=getline(&line, &len, fp))){
+	while((read=getline(&line, &len, fp)) != -1){
 		//ignore header lines
 		if (line[0] == 'p'){
 			//this line has the total number of nodes and edges, we can make an empty graph
 			sscanf(line, "p sp %d %d", &num_nodes, &num_edges);
 			graph = (Node *) malloc(sizeof(Node) * num_nodes);
-			for (int i = 0; i < num_nodes; i++) {graph[i].out_degree = 0;}
+			for (int i = 0; i < num_nodes; i++) {
+				graph[i].out_degree = 0;
+				graph[i].successors = NULL;
+				}
 		}
 		else if (line[0] == 'a'){
 			//now we know how much memory to allocate for each node
 			sscanf(line, "a %d %*d %*d", &source);
-			graph[source].out_degree++;
+			graph[source - 1].out_degree++;
 			}
-	}		
+	}	
+	if (graph == NULL) {fprintf(stderr, "Error Reading Graph File, No Graph Allocated"); exit(-1);}
 	rewind(fp);
 	for (int i = 0; i < num_nodes; i++){
 		//allocate the memory for each node
@@ -97,23 +101,24 @@ int main(int argc, char*argv[]){
 	}
 	int c, s = 0;
 	//record edges in the graph structure
-	while((read=getline(&line, &len, fp))){
+	while((read=getline(&line, &len, fp)) != -1){
 		if (line[0] == 'a'){
 			sscanf(line, "a %d %d %*d", &source, &dest);
-			if (source == s){
-				graph[source].successors[c] = dest;
+			if (source - 1 == s){
+				graph[s].successors[c] = (dest - 1);
 				c ++;
 			}
 			else {
-				s = source;
+				s = source - 1;
 				c = 0;
-				graph[source].successors[c] = dest;
+				graph[s].successors[c] = (dest - 1);
 				c++;
 			}
 		}
 	}
 
 	fclose(fp);
+	free(line);
 
 	for (int i = 0; i < num_nodes; i++){
 		graph[i].onstack = false;
