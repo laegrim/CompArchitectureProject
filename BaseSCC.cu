@@ -9,6 +9,7 @@
 #include <cuda.h>
 #include <sys/time.h>
 #include <unistd.h>
+#include <ctype.h>
 
 typedef struct Node {
 	unsigned int order;
@@ -105,7 +106,7 @@ __global__ void trim(Node * graph, unsigned int * finished, int * subgraph) {
 			for(int i = 0; i < curr_node.out_degree; i++){
 				neighbor = graph[curr_node.successors[i]];
 				if (neighbor.subgraph == *subgraph) {
-					atomicCAS(graph[curr_node.successors[i]].fw_reachable, 0, 1);
+					atomicCAS(&(graph[curr_node.successors[i]].fw_reachable), 0, 1);
 				}
 			}
 		}
@@ -253,12 +254,12 @@ int main(int argc, char ** argv){
 	printf("Basic FWBW SCC v1.0\n");
 	
 	bool output = false;
-	char * out_file, in_file;
+	char * out_file, * in_file;
 	bool trim = false;
 	unsigned int blocks = 0;
 	unsigned int threads = 0;		
 	
-	while ((option = getopt(argc, argv, "o:tb:x:")) != -1) {
+	while ((int option = getopt(argc, argv, "o:tb:x:")) != -1) {
 		switch (option) {
 			case 'o':
 				output = true;
@@ -268,10 +269,10 @@ int main(int argc, char ** argv){
 				trim = true;
 				break;
 			case 'b':
-				blocks = optarg;
+				blocks = (unsigned int) optarg;
 				break;
 			case 'x':
-				threads = optarg;
+				threads = (unsigned int) optarg;
 				break;
 			case '?':
 				if (optopt == 'o' || optopt == 'b' || optopt == 'x') {fprintf(stderr, "Option -%c requires an argument\n", optopt); exit(-1);}
@@ -377,7 +378,7 @@ int main(int argc, char ** argv){
 
 	//Allocate the necessary memory on the device, and copy over any initial data
 	Node * d_graph;
-	unsigned int h_finished; h_mode; h_subgraph; h_empty;
+	unsigned int h_finished, h_mode, h_subgraph, h_empty;
 	unsigned int * d_finished, * d_mode, * d_subgraph, * d_scc, * d_empty, * d_pivot;
 	
 	if (cudaSuccess != cudaMalloc((void **) &d_graph, sizeof(Node) * num_nodes)) {fprintf(stderr, "Couldn't allocate d_graph\n"); exit(-1);}
