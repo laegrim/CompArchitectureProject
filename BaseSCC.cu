@@ -88,7 +88,7 @@ __global__ void reset_bwfw_reachability(Node * graph){
 	}
 }
 
-__global__ void trim(Node * graph, unsigned int * finished, int * subgraph) {
+__global__ void trim_kernel(Node * graph, unsigned int * finished, int * subgraph) {
 
 	if (threadIdx.x == 0) {atomicCAS(finished, 0, 1);}
 
@@ -154,7 +154,7 @@ __global__ void assign_scc(Node * graph, int * scc) {
 	
 }
 
-__global__ void ancestor_partition(Node * graph, unsigned int * subgraph, unsigned int * empty){
+__global__ void ancestor_partition(Node * graph, int * subgraph, unsigned int * empty){
 	
 	//We need to assign the anscestors who are not in the scc to a new subgraph
 	unsigned int v = (blockIdx.x * blockDim.x) + threadIdx.x;
@@ -173,7 +173,7 @@ __global__ void ancestor_partition(Node * graph, unsigned int * subgraph, unsign
 	}
 }
 
-__global__ void descendant_partition(Node * graph, unsigned int * subgraph, unsigned int * empty){
+__global__ void descendant_partition(Node * graph, int * subgraph, unsigned int * empty){
 
 	//We need to assign the descendents who are not in the scc to a new subgraph
 	unsigned int v = (blockIdx.x * blockDim.x) + threadIdx.x;
@@ -192,7 +192,7 @@ __global__ void descendant_partition(Node * graph, unsigned int * subgraph, unsi
 	}
 }
 
-__global__ void remainder_partition(Node * graph, unsigned int * subgraph, unsigned int * empty){
+__global__ void remainder_partition(Node * graph, int * subgraph, unsigned int * empty){
 	//We need to assign the descendents who are not in the scc to a new subgraph
 	unsigned int v = (blockIdx.x * blockDim.x) + threadIdx.x;
 	Node curr_node;
@@ -210,7 +210,7 @@ __global__ void remainder_partition(Node * graph, unsigned int * subgraph, unsig
 	}
 }
 
-__global__ void pivot(Node * graph, unsigned int * subgraph, unsigned int * pivot){
+__global__ void pivot(Node * graph, int * subgraph, unsigned int * pivot){
 	//here we just assign the lowest order node in a subgraph to be the pivot
 	//this is suboptimal
 
@@ -379,13 +379,14 @@ int main(int argc, char ** argv){
 	//Allocate the necessary memory on the device, and copy over any initial data
 	Node * d_graph;
 	unsigned int h_finished, h_mode, h_subgraph, h_empty;
-	unsigned int * d_finished, * d_mode, * d_subgraph, * d_scc, * d_empty, * d_pivot;
+	unsigned int * d_finished, * d_mode, * d_empty, * d_pivot;
+	int * d_subgraph, * d_scc;
 	
 	if (cudaSuccess != cudaMalloc((void **) &d_graph, sizeof(Node) * num_nodes)) {fprintf(stderr, "Couldn't allocate d_graph\n"); exit(-1);}
 	if (cudaSuccess != cudaMalloc((void **) &d_finished, sizeof(unsigned int))) {fprintf(stderr, "Couldn't allocate d_finished\n"); exit(-1);}
 	if (cudaSuccess != cudaMalloc((void **) &d_mode, sizeof(unsigned int))) {fprintf(stderr, "Couldn't allocate d_mode\n"); exit(-1);}
-	if (cudaSuccess != cudaMalloc((void **) &d_subgraph, sizeof(unsigned int))) {fprintf(stderr, "Couldn't allocate d_subgraph\n"); exit(-1);}
-	if (cudaSuccess != cudaMalloc((void **) &d_scc, sizeof(unsigned int))) {fprintf(stderr, "Couldn't allocate d_scc\n"); exit(-1);}
+	if (cudaSuccess != cudaMalloc((void **) &d_subgraph, sizeof(int))) {fprintf(stderr, "Couldn't allocate d_subgraph\n"); exit(-1);}
+	if (cudaSuccess != cudaMalloc((void **) &d_scc, sizeof(int))) {fprintf(stderr, "Couldn't allocate d_scc\n"); exit(-1);}
 	if (cudaSuccess != cudaMalloc((void **) &d_empty, sizeof(unsigned int))) {fprintf(stderr, "Couldn't allocate d_empty\n"); exit(-1);}
 	if (cudaSuccess != cudaMalloc((void **) &d_pivot, sizeof(unsigned int))) {fprintf(stderr, "Couldn't allocate d_pivot\n"); exit(-1);}
 
@@ -423,7 +424,7 @@ int main(int argc, char ** argv){
 			if (cudaSuccess != cudaMemcpy(d_finished, &h_finished, sizeof(unsigned int), cudaMemcpyHostToDevice)) {fprintf(stderr, "Couldn't copy d_finished to device\n"); exit(-1);}
 			while (!h_finished){
 				//trim
-				trim<<<blocks, threads>>>(d_graph, d_finished, d_subgraph);
+				trim_kernel<<<blocks, threads>>>(d_graph, d_finished, d_subgraph);
 				//reset the reachability
 				reset_bwfw_reachability<<<blocks, threads>>>(d_graph);
 				//check if finished
@@ -440,7 +441,7 @@ int main(int argc, char ** argv){
 		if (cudaSuccess != cudaMemcpy(d_finished, &h_finished, sizeof(unsigned int), cudaMemcpyHostToDevice)) {fprintf(stderr, "Couldn't copy d_finished to device\n"); exit(-1);}
 		if (cudaSuccess != cudaMemcpy(d_mode, &h_mode, sizeof(unsigned int), cudaMemcpyHostToDevice)) {fprintf(stderr, "Couldn't copy d_mode to device\n"); exit(-1);}
 		while (!h_finished){
-			bfs<<<blocks, threads>>>(d_graph, d_mode, d_subgraph);
+			bfs<<<blocks, threads>>>(d_graph, d_finished, d_mode, d_subgraph);
 			if (cudaSuccess != cudaMemcpy(&h_finished, d_finished, sizeof(unsigned int), cudaMemcpyDeviceToHost)) {fprintf(stderr, "Couldn't copy d_finished to host\n"); exit(-1);}
 		}
 
@@ -450,7 +451,7 @@ int main(int argc, char ** argv){
 		if (cudaSuccess != cudaMemcpy(d_finished, &h_finished, sizeof(unsigned int), cudaMemcpyHostToDevice)) {fprintf(stderr, "Couldn't copy d_finished to device\n"); exit(-1);}
 		if (cudaSuccess != cudaMemcpy(d_mode, &h_mode, sizeof(unsigned int), cudaMemcpyHostToDevice)) {fprintf(stderr, "Couldn't copy d_mode to device\n"); exit(-1);}
 		while (!h_finished){
-			bfs<<<blocks, threads>>>(d_graph, d_mode, d_subgraph);
+			bfs<<<blocks, threads>>>(d_graph, d_finished, d_mode, d_subgraph);
 			if (cudaSuccess != cudaMemcpy(&h_finished, d_finished, sizeof(unsigned int), cudaMemcpyDeviceToHost)) {fprintf(stderr, "Couldn't copy d_finished to host\n"); exit(-1);}
 		}
 
