@@ -173,7 +173,7 @@ __global__ void ancestor_partition(Node * graph, int * subgraph, unsigned int * 
 	}
 }
 
-__global__ void descendant_partition(Node * graph, int * subgraph, unsigned int * empty){
+__global__ void descendent_partition(Node * graph, int * subgraph, unsigned int * empty){
 
 	//We need to assign the descendents who are not in the scc to a new subgraph
 	unsigned int v = (blockIdx.x * blockDim.x) + threadIdx.x;
@@ -368,7 +368,6 @@ int main(int argc, char ** argv){
 	if (blocks == 0) {blocks = (num_nodes + (threads - 1)) / threads;}
 
 	//set up the stack
-	unsigned int subgraph;
 	std::stack<unsigned int> subgraphs;
 	subgraphs.push(0);
 		
@@ -433,7 +432,7 @@ int main(int argc, char ** argv){
 		}
 						
 		//choose a pivot
-		pivot<<<blocks, threads>>>(d_graph, d_subgraph, pivot);
+		pivot<<<blocks, threads>>>(d_graph, d_subgraph, d_pivot);
 
 		//do a forwards reachability search
 		h_finished = 0;
@@ -468,7 +467,7 @@ int main(int argc, char ** argv){
 		//Add the BW reachable nodes not in the SCC to the subgraph list
 		h_subgraph++;
 		if (cudaSuccess != cudaMemcpy(d_subgraph, &h_subgraph, sizeof(unsigned int), cudaMemcpyHostToDevice)) {fprintf(stderr, "Couldn't copy d_finished to device\n"); exit(-1);}
-		anscestor_partition<<<blocks, threads>>>(d_graph, d_subgraph, d_empty);
+		ancestor_partition<<<blocks, threads>>>(d_graph, d_subgraph, d_empty);
 		if (cudaSuccess != cudaMemcpy(&h_empty, d_empty, sizeof(unsigned int), cudaMemcpyDeviceToHost)) {fprintf(stderr, "Couldn't copy d_finished to host\n"); exit(-1);}
 		if (!h_empty) {subgraphs.push(h_subgraph);}
 
@@ -488,8 +487,8 @@ int main(int argc, char ** argv){
 	double kruntime = kend.tv_sec + kend.tv_usec / 1000000.0 - kstart.tv_sec - kstart.tv_usec / 1000000.0;
 
 	for (int i = 0; i < num_nodes; i++) {
-		free(h_graph[i].successors);
-		free(h_graph[i].predecessors);
+		free(graph[i].successors);
+		free(graph[i].predecessors);
 
 	//Print the Results, if necessary
 	if (cudaSuccess != cudaMemcpy(graph, d_graph, sizeof(Node) * num_nodes, cudaMemcpyDeviceToHost)) {fprintf(stderr, "Couldn't copy graph to host\n"); exit(-1);}
@@ -519,7 +518,7 @@ int main(int argc, char ** argv){
 	}
 
 	//Free the memory
-	free(h_graph)
+	free(graph);
 	cudaFree(d_finished);
 	cudaFree(d_mode);
 	cudaFree(d_scc);
