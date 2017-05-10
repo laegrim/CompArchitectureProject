@@ -378,8 +378,9 @@ int main(int argc, char ** argv){
 	//Allocate the necessary memory on the device, and copy over any initial data
 	Node * d_graph;
 	unsigned int h_finished, h_mode, h_subgraph, h_empty;
-	unsigned int * d_finished, * d_mode, * d_empty, * d_pivot;
+	unsigned int * d_finished, * d_mode, * d_empty, * d_pivot, * d_predeccesor_array, * d_successor_array;
 	int * d_subgraph, * d_scc;
+	cudaError_t err;
 	
 	if (cudaSuccess != cudaMalloc((void **) &d_graph, sizeof(Node) * num_nodes)) {fprintf(stderr, "Couldn't allocate d_graph\n"); exit(-1);}
 	if (cudaSuccess != cudaMalloc((void **) &d_finished, sizeof(unsigned int))) {fprintf(stderr, "Couldn't allocate d_finished\n"); exit(-1);}
@@ -392,15 +393,25 @@ int main(int argc, char ** argv){
 	cudaMemcpyToSymbol(d_num_nodes, &num_nodes, sizeof(unsigned int));
 	
 	//we need to copy over the graph struct, and allocate/copy the predecessor and successor arrays
-	if (cudaSuccess != cudaMemcpy(d_graph, graph, sizeof(Node) * num_nodes, cudaMemcpyHostToDevice)) {fprintf(stderr, "Couldn't copy graph to device\n"); exit(-1);}
-	unsigned int * d_successors, * d_predecessors;
+	err = cudaMemcpy(d_graph, graph, sizeof(Node) * num_nodes, cudaMemcpyHostToDevice);
+	if (cudaSuccess != err) {fprintf(stderr, "Couldn't copy graph to device\n"); exit(-1);}
+
+	//we need to allocate space for all of the predecessors and successors
+	err = cudaMalloc((void **) &d_predecessor_array, sizeof(unsigned int) * num_edges);
+	if (cudaSuccess != err) {fprintf(stderr, "Couldn't allocate a predecessors array\n", i); exit(-1);}
+	err = cudaMalloc((void **) &d_successor_array, sizeof(unsigned int) * num_edges);
+	if (cudaSuccess != err) {fprintf(stderr, "Couldn't allocate a predecessors array\n", i); exit(-1);}
+	
+	unsigned int pred_offset = 0, suc_offset = 0;
 	for (int i = 0; i < num_nodes; i++){
-		if (cudaSuccess != cudaMalloc((void **) &d_successors, graph[i].out_degree * sizeof(unsigned int))) {fprintf(stderr, "Couldn't allocate a successors array for node %d\n", i); exit(-1);}
-		if (cudaSuccess != cudaMalloc((void **) &d_predecessors, graph[i].in_degree * sizeof(unsigned int))) {fprintf(stderr, "Couldn't allocate a predecessors array for node %d\n", i); exit(-1);}
-		if (cudaSuccess != cudaMemcpy(d_successors, graph[i].successors, graph[i].out_degree * sizeof(unsigned int), cudaMemcpyHostToDevice)) {fprintf(stderr, "Couldn't copy successors array for node %d\n", i); exit(-1);}
-		if (cudaSuccess != cudaMemcpy(d_predecessors, graph[i].predecessors, graph[i].in_degree * sizeof(unsigned int), cudaMemcpyHostToDevice)) {fprintf(stderr, "Couldn't copy predeccessors array for node %d\n", i); exit(-1);}
-		if (cudaSuccess != cudaMemcpy(&(d_graph->successors), &d_successors, sizeof(unsigned int *), cudaMemcpyHostToDevice)) {fprintf(stderr, "Couldn't copy successors pointer for node %d\n", i); exit(-1);}
-		if (cudaSuccess != cudaMemcpy(&(d_graph->predecessors), &d_predecessors, sizeof(unsigned int *), cudaMemcpyHostToDevice)) {fprintf(stderr, "Couldn't copy predecessors pointer for node %d\n", i); exit(-1);}
+		err = cudaMemcpy(&d_successor_array[suc_offset], graph[i].successors, graph[i].out_degree * sizeof(unsigned int), cudaMemcpyHostToDevice);
+		if (cudaSuccess != err) {fprintf(stderr, "Couldn't copy successors array for node %d\n", i); exit(-1);}
+		err = cudaMemcpy(&d_predecessor_array[pred_offset], graph[i].predecessors, graph[i].in_degree * sizeof(unsigned int), cudaMemcpyHostToDevice);
+		if (cudaSuccess != err) {fprintf(stderr, "Couldn't copy predeccessors array for node %d\n", i); exit(-1);}
+		err = cudaMemcpy(&(d_graph[i]->successors), &d_successor_array[suc_offset], sizeof(unsigned int *), cudaMemcpyHostToDevice);
+		if (cudaSuccess != err) {fprintf(stderr, "Couldn't copy successors pointer for node %d\n", i); exit(-1);}
+		err = cudaMemcpy(&(d_graph[i]->predecessors), &d_predecessor_array[pred_offset], sizeof(unsigned int *), cudaMemcpyHostToDevice);
+		if (cudaSuccess != err) {fprintf(stderr, "Couldn't copy predecessors pointer for node %d\n", i); exit(-1);}
 	}
 
 	//Start the kernel timer
@@ -412,7 +423,8 @@ int main(int argc, char ** argv){
 		//take a subgraph off the stack	
 		h_subgraph = subgraphs.top();
 		subgraphs.pop();
-		if (cudaSuccess != cudaMemcpy(d_subgraph, &h_subgraph, sizeof(unsigned int), cudaMemcpyHostToDevice)) {fprintf(stderr, "Couldn't copy d_subgraph to device\n"); exit(-1);}
+		err = cudaMemcpy(d_subgraph, &h_subgraph, sizeof(unsigned int), cudaMemcpyHostToDevice);
+		if (cudaSuccess != err) {fprintf(stderr, "Couldn't copy d_subgraph to device\n"); exit(-1);}
 
 		//reset it's forward and backward reachable attributes
 		reset_bwfw_reachability<<<blocks, threads>>>(d_graph);
@@ -420,14 +432,15 @@ int main(int argc, char ** argv){
 		//if trim, then trim till you can trim no more
 		if (trim){
 			h_finished = 0;
-			if (cudaSuccess != cudaMemcpy(d_finished, &h_finished, sizeof(unsigned int), cudaMemcpyHostToDevice)) {fprintf(stderr, "Couldn't copy d_finished to device\n"); exit(-1);}
+			err = cudaMemcpy(d_finished, &h_finished, sizeof(unsigned int), cudaMemcpyHostToDevice);
+			if (cudaSuccess != err) {fprintf(stderr, "Couldn't copy d_finished to device\n"); exit(-1);}
 			while (!h_finished){
 				//trim
 				trim_kernel<<<blocks, threads>>>(d_graph, d_finished, d_subgraph);
 				//reset the reachability
 				reset_bwfw_reachability<<<blocks, threads>>>(d_graph);
 				//check if finished
-				cudaError_t err = cudaMemcpy(&h_finished, d_finished, sizeof(unsigned int), cudaMemcpyDeviceToHost);
+				err = cudaMemcpy(&h_finished, d_finished, sizeof(unsigned int), cudaMemcpyDeviceToHost);
 				if (cudaSuccess != err) {fprintf(stderr, "Couldn't copy d_finished to host after trim: error %d\n", err); exit(-1);}
 			}
 		}
@@ -438,22 +451,26 @@ int main(int argc, char ** argv){
 		//do a forwards reachability search
 		h_finished = 0;
 		h_mode = 0;
-		if (cudaSuccess != cudaMemcpy(d_finished, &h_finished, sizeof(unsigned int), cudaMemcpyHostToDevice)) {fprintf(stderr, "Couldn't copy d_finished to device\n"); exit(-1);}
-		if (cudaSuccess != cudaMemcpy(d_mode, &h_mode, sizeof(unsigned int), cudaMemcpyHostToDevice)) {fprintf(stderr, "Couldn't copy d_mode to device\n"); exit(-1);}
+		err = cudaMemcpy(d_finished, &h_finished, sizeof(unsigned int), cudaMemcpyHostToDevice);
+		if (cudaSuccess != err) {fprintf(stderr, "Couldn't copy d_finished to device\n"); exit(-1);}
+		err = cudaMemcpy(d_mode, &h_mode, sizeof(unsigned int), cudaMemcpyHostToDevice);
+		if (cudaSuccess != err) {fprintf(stderr, "Couldn't copy d_mode to device\n"); exit(-1);}
 		while (!h_finished){
 			bfs<<<blocks, threads>>>(d_graph, d_finished, d_mode, d_subgraph);
-			cudaError_t err = cudaMemcpy(&h_finished, d_finished, sizeof(unsigned int), cudaMemcpyDeviceToHost);
+			err = cudaMemcpy(&h_finished, d_finished, sizeof(unsigned int), cudaMemcpyDeviceToHost);
 			if (cudaSuccess != err) {fprintf(stderr, "Couldn't copy d_finished to host after FW: error %d\n", err); exit(-1);}
 		}
 
 		//do a backwards reachability search
 		h_finished = 0;
 		h_mode = 1;
-		if (cudaSuccess != cudaMemcpy(d_finished, &h_finished, sizeof(unsigned int), cudaMemcpyHostToDevice)) {fprintf(stderr, "Couldn't copy d_finished to device\n"); exit(-1);}
-		if (cudaSuccess != cudaMemcpy(d_mode, &h_mode, sizeof(unsigned int), cudaMemcpyHostToDevice)) {fprintf(stderr, "Couldn't copy d_mode to device\n"); exit(-1);}
+		err = cudaMemcpy(d_finished, &h_finished, sizeof(unsigned int), cudaMemcpyHostToDevice);
+		if (cudaSuccess != err) {fprintf(stderr, "Couldn't copy d_finished to device\n"); exit(-1);}
+		err = cudaMemcpy(d_mode, &h_mode, sizeof(unsigned int), cudaMemcpyHostToDevice);
+		if (cudaSuccess != err) {fprintf(stderr, "Couldn't copy d_mode to device\n"); exit(-1);}
 		while (!h_finished){
 			bfs<<<blocks, threads>>>(d_graph, d_finished, d_mode, d_subgraph);
-			cudaError_t err = cudaMemcpy(&h_finished, d_finished, sizeof(unsigned int), cudaMemcpyDeviceToHost);
+			err = cudaMemcpy(&h_finished, d_finished, sizeof(unsigned int), cudaMemcpyDeviceToHost);
 			if (cudaSuccess != err) {fprintf(stderr, "Couldn't copy d_finished to host after BW: error %d\n", err); exit(-1);}
 		}
 
@@ -462,23 +479,29 @@ int main(int argc, char ** argv){
 
 		//Add the FW reachable nodes not in the SCC to the subgraph list
 		h_subgraph++;
-		if (cudaSuccess != cudaMemcpy(d_subgraph, &h_subgraph, sizeof(unsigned int), cudaMemcpyHostToDevice)) {fprintf(stderr, "Couldn't copy d_subgraph to device\n"); exit(-1);}
+		err = cudaMemcpy(d_subgraph, &h_subgraph, sizeof(unsigned int), cudaMemcpyHostToDevice);
+		if (cudaSuccess != err) {fprintf(stderr, "Couldn't copy d_subgraph to device\n"); exit(-1);}
 		descendent_partition<<<blocks, threads>>>(d_graph, d_subgraph, d_empty);
-		if (cudaSuccess != cudaMemcpy(&h_empty, d_empty, sizeof(unsigned int), cudaMemcpyDeviceToHost)) {fprintf(stderr, "Couldn't copy d_empty to host\n"); exit(-1);}
+		err = cudaMemcpy(&h_empty, d_empty, sizeof(unsigned int), cudaMemcpyDeviceToHost);
+		if (cudaSuccess != err) {fprintf(stderr, "Couldn't copy d_empty to host\n"); exit(-1);}
 		if (!h_empty) {subgraphs.push(h_subgraph);}
 
 		//Add the BW reachable nodes not in the SCC to the subgraph list
 		h_subgraph++;
-		if (cudaSuccess != cudaMemcpy(d_subgraph, &h_subgraph, sizeof(unsigned int), cudaMemcpyHostToDevice)) {fprintf(stderr, "Couldn't copy d_subgraph to device\n"); exit(-1);}
+		err = cudaMemcpy(d_subgraph, &h_subgraph, sizeof(unsigned int), cudaMemcpyHostToDevice);
+		if (cudaSuccess != err) {fprintf(stderr, "Couldn't copy d_subgraph to device\n"); exit(-1);}
 		ancestor_partition<<<blocks, threads>>>(d_graph, d_subgraph, d_empty);
-		if (cudaSuccess != cudaMemcpy(&h_empty, d_empty, sizeof(unsigned int), cudaMemcpyDeviceToHost)) {fprintf(stderr, "Couldn't copy d_empty to host\n"); exit(-1);}
+		err = cudaMemcpy(&h_empty, d_empty, sizeof(unsigned int), cudaMemcpyDeviceToHost);
+		if (cudaSuccess != err) {fprintf(stderr, "Couldn't copy d_empty to host\n"); exit(-1);}
 		if (!h_empty) {subgraphs.push(h_subgraph);}
 
 		//Add the nodes not reachable from the pivot to to the subgraph list
 		h_subgraph++;
-		if (cudaSuccess != cudaMemcpy(d_subgraph, &h_subgraph, sizeof(unsigned int), cudaMemcpyHostToDevice)) {fprintf(stderr, "Couldn't copy d_subgraph to device\n"); exit(-1);}
+		err = cudaMemcpy(d_subgraph, &h_subgraph, sizeof(unsigned int), cudaMemcpyHostToDevice);
+		if (cudaSuccess != err) {fprintf(stderr, "Couldn't copy d_subgraph to device\n"); exit(-1);}
 		remainder_partition<<<blocks, threads>>>(d_graph, d_subgraph, d_empty);
-		if (cudaSuccess != cudaMemcpy(&h_empty, d_empty, sizeof(unsigned int), cudaMemcpyDeviceToHost)) {fprintf(stderr, "Couldn't copy d_empty to host\n"); exit(-1);}
+		err = cudaMemcpy(&h_empty, d_empty, sizeof(unsigned int), cudaMemcpyDeviceToHost);
+		if (cudaSuccess != err) {fprintf(stderr, "Couldn't copy d_empty to host\n"); exit(-1);}
 		if (!h_empty) {subgraphs.push(h_subgraph);}
 	}
 	//end the timers
@@ -497,7 +520,8 @@ int main(int argc, char ** argv){
 	}
 
 	//Print the Results, if necessary
-	if (cudaSuccess != cudaMemcpy(graph, d_graph, sizeof(Node) * num_nodes, cudaMemcpyDeviceToHost)) {fprintf(stderr, "Couldn't copy graph to host\n"); exit(-1);}
+	err = cudaMemcpy(graph, d_graph, sizeof(Node) * num_nodes, cudaMemcpyDeviceToHost);
+	if (cudaSuccess != err) {fprintf(stderr, "Couldn't copy graph to host\n"); exit(-1);}
 	
 	if (output == true) {
 		fp = fopen(out_file, "w+");
@@ -531,10 +555,8 @@ int main(int argc, char ** argv){
 	cudaFree(d_pivot);
 	cudaFree(d_empty);
 	cudaFree(d_subgraph);
-	for (int i = 0; i < num_nodes; i++) {
-		cudaFree(d_graph->successors);
-		cudaFree(d_graph->predecessors);
-	}
+	cudaFree(d_predecessor_array);
+	cudaFree(d_successor_array);
 	cudaFree(d_graph);
 
 	return 0;
