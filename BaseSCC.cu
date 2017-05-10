@@ -34,9 +34,9 @@ __global__ void bfs(Node * graph, unsigned int * finished, unsigned int * mode, 
 
 	unsigned int v = (blockIdx.x * blockDim.x) + threadIdx.x;
 
-	Node * curr_node;
+	Node curr_node;
 	
-	for (i = v; i < d_num_nodes; i++) {
+	for (unsigned int i = v; i < d_num_nodes; i++) {
 		
 		//get the current node
 		curr_node = graph[i];
@@ -48,7 +48,7 @@ __global__ void bfs(Node * graph, unsigned int * finished, unsigned int * mode, 
 				//for each of it's neighbors
 				for(int i = 0; i < curr_node.out_degree; i++){
 					//if the current node is forward reachable and the neighbor is in the subgraph
-					neighbor = graph[curr_node.successors[i]];
+					Node neighbor = graph[curr_node.successors[i]];
 					if (curr_node.fw_reachable && neighbor.subgraph == *subgraph) {
 						//tell it's neighbors they are forward reachable
 						old = atomicCAS(graph[curr_node.successors[i]].fw_reachable, 0, 1);
@@ -76,9 +76,9 @@ __global__ void reset_bwfw_reachability(Node * graph){
 	//reset node.fw_reachable & node.bw_reachable	
 	 
 	unsigned int v = (blockIdx.x * blockDim.x) + threadIdx.x;
-	Node * curr_node;
+	Node curr_node;
 	
-	for (i = v; i < d_num_nodes; i++){	
+	for (unsigned int i = v; i < d_num_nodes; i++){	
 		//get current node
 		curr_node = graph[i];
 		//reset it
@@ -93,9 +93,9 @@ __global__ void trim(Node * graph, unsigned int * finished, int * subgraph) {
 	unsigned int old;
 
 	unsigned int v = (blockIdx.x * blockDim.x) + threadIdx.x;
-	Node * curr_node;
+	Node curr_node;
 	
-	for (i = v; i < d_num_nodes; i++){
+	for (unsigned int i = v; i < d_num_nodes; i++){
 		
 		//get the current node
 		curr_node = graph[i];
@@ -116,7 +116,7 @@ __global__ void trim(Node * graph, unsigned int * finished, int * subgraph) {
 	__threadfence();
 
 	
-	for (i = v; i < d_num_nodes; i++){
+	for (unsigned int i = v; i < d_num_nodes; i++){
 		//if you are not reachable or do not reach
 		if (curr_node.fw_reachable == 0 || curr_node.out_degree == 0) {
 			//then you are trimmable
@@ -134,9 +134,9 @@ __global__ void assign_scc(Node * graph, int * scc) {
 	//This implementation is just an atomic min; a reduction could yeild much better throughput
 
 	unsigned int v = (blockIdx.x * blockDim.x) + threadIdx.x;
-	Node * curr_node;
+	Node curr_node;
 	
-	for (i = v; i < d_num_nodes; i++){
+	for (unsigned int i = v; i < d_num_nodes; i++){
 		
 		//get the current node
 		curr_node = graph[i];
@@ -158,13 +158,13 @@ __global__ void ancestor_partition(Node * graph, unsigned int * subgraph, unsign
 	
 	//We need to assign the anscestors who are not in the scc to a new subgraph
 	unsigned int v = (blockIdx.x * blockDim.x) + threadIdx.x;
-	Node * curr_node;
+	Node curr_node;
 
 	if (threadIdx.x == 0) {atomicCAS(empty, 0, 1);}
 	
 	__threadfence();
 	
-	for (i = v; i < d_num_nodes; i++){
+	for (unsigned int i = v; i < d_num_nodes; i++){
 		
 		//get the current node
 		curr_node = graph[i];
@@ -177,13 +177,13 @@ __global__ void descendant_partition(Node * graph, unsigned int * subgraph, unsi
 
 	//We need to assign the descendents who are not in the scc to a new subgraph
 	unsigned int v = (blockIdx.x * blockDim.x) + threadIdx.x;
-	Node * curr_node;
+	Node curr_node;
 
 	if (threadIdx.x == 0) {atomicCAS(empty, 0, 1);}
 	
 	__threadfence();
 	
-	for (i = v; i < d_num_nodes; i++){
+	for (unsigned int i = v; i < d_num_nodes; i++){
 		
 		//get the current node
 		curr_node = graph[i];
@@ -195,13 +195,13 @@ __global__ void descendant_partition(Node * graph, unsigned int * subgraph, unsi
 __global__ void remainder_partition(Node * graph, unsigned int * subgraph, unsigned int * empty){
 	//We need to assign the descendents who are not in the scc to a new subgraph
 	unsigned int v = (blockIdx.x * blockDim.x) + threadIdx.x;
-	Node * curr_node;
+	Node curr_node;
 
 	if (threadIdx.x == 0) {atomicCAS(empty, 0, 1);}
 	
 	__threadfence();
 	
-	for (i = v; i < d_num_nodes; i++){
+	for (unsigned int i = v; i < d_num_nodes; i++){
 		
 		//get the current node
 		curr_node = graph[i];
@@ -220,9 +220,9 @@ __global__ void pivot(Node * graph, unsigned int * subgraph, unsigned int * pivo
 	unsigned int votes;
 	unsigned int lowest;
 	unsigned int lane_id = threadIdx.x % x
-	Node * curr_node;
+	Node curr_node;
 
-	for (i = v; i < d_num_nodes; i++){
+	for (unsigned int i = v; i < d_num_nodes; i++){
 		//we don't want to hammer away with atomics, so we reduce the number of
 		//threads using bandwidth
 
@@ -239,7 +239,7 @@ __global__ void pivot(Node * graph, unsigned int * subgraph, unsigned int * pivo
 
 	__threadfence();
 	//now that pivot should be finished, we need to initialize the corresponding node
-	for (i = v; i < d_num_nodes; i++){
+	for (unsigned int i = v; i < d_num_nodes; i++){
 		curr_node = graph[i];
 		if (lane_id == lowest && *pivot == curr_node.order) {
 			curr_node.fw_reachable = 1;
