@@ -485,10 +485,13 @@ int main(int argc, char ** argv){
 	//Print the Times
 	double all_runtime = allend.tv_sec + allend.tv_usec / 1000000.0 - allstart.tv_sec - allstart.tv_usec / 1000000.0;
 	double kruntime = kend.tv_sec + kend.tv_usec / 1000000.0 - kstart.tv_sec - kstart.tv_usec / 1000000.0;
+	fprintf(stdout, "Total Time: %f\n", all_runtime);
+	fprintf(stdout, "Kernel Time: %f\n", kruntime);
 
 	for (int i = 0; i < num_nodes; i++) {
 		free(graph[i].successors);
 		free(graph[i].predecessors);
+	}
 
 	//Print the Results, if necessary
 	if (cudaSuccess != cudaMemcpy(graph, d_graph, sizeof(Node) * num_nodes, cudaMemcpyDeviceToHost)) {fprintf(stderr, "Couldn't copy graph to host\n"); exit(-1);}
