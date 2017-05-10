@@ -378,7 +378,7 @@ int main(int argc, char ** argv){
 	//Allocate the necessary memory on the device, and copy over any initial data
 	Node * d_graph;
 	unsigned int h_finished, h_mode, h_subgraph, h_empty;
-	unsigned int * d_finished, * d_mode, * d_empty, * d_pivot, * d_predeccesor_array, * d_successor_array;
+	unsigned int * d_finished, * d_mode, * d_empty, * d_pivot, * d_predecessor_array, * d_successor_array;
 	int * d_subgraph, * d_scc;
 	cudaError_t err;
 	
@@ -398,9 +398,9 @@ int main(int argc, char ** argv){
 
 	//we need to allocate space for all of the predecessors and successors
 	err = cudaMalloc((void **) &d_predecessor_array, sizeof(unsigned int) * num_edges);
-	if (cudaSuccess != err) {fprintf(stderr, "Couldn't allocate a predecessors array\n", i); exit(-1);}
+	if (cudaSuccess != err) {fprintf(stderr, "Couldn't allocate a predecessors array on device\n"); exit(-1);}
 	err = cudaMalloc((void **) &d_successor_array, sizeof(unsigned int) * num_edges);
-	if (cudaSuccess != err) {fprintf(stderr, "Couldn't allocate a predecessors array\n", i); exit(-1);}
+	if (cudaSuccess != err) {fprintf(stderr, "Couldn't allocate a predecessors array on device\n"); exit(-1);}
 	
 	unsigned int pred_offset = 0, suc_offset = 0;
 	for (int i = 0; i < num_nodes; i++){
@@ -408,9 +408,9 @@ int main(int argc, char ** argv){
 		if (cudaSuccess != err) {fprintf(stderr, "Couldn't copy successors array for node %d\n", i); exit(-1);}
 		err = cudaMemcpy(&d_predecessor_array[pred_offset], graph[i].predecessors, graph[i].in_degree * sizeof(unsigned int), cudaMemcpyHostToDevice);
 		if (cudaSuccess != err) {fprintf(stderr, "Couldn't copy predeccessors array for node %d\n", i); exit(-1);}
-		err = cudaMemcpy(&(d_graph[i]->successors), &d_successor_array[suc_offset], sizeof(unsigned int *), cudaMemcpyHostToDevice);
+		err = cudaMemcpy(&(d_graph[i].successors), &d_successor_array[suc_offset], sizeof(unsigned int *), cudaMemcpyHostToDevice);
 		if (cudaSuccess != err) {fprintf(stderr, "Couldn't copy successors pointer for node %d\n", i); exit(-1);}
-		err = cudaMemcpy(&(d_graph[i]->predecessors), &d_predecessor_array[pred_offset], sizeof(unsigned int *), cudaMemcpyHostToDevice);
+		err = cudaMemcpy(&(d_graph[i].predecessors), &d_predecessor_array[pred_offset], sizeof(unsigned int *), cudaMemcpyHostToDevice);
 		if (cudaSuccess != err) {fprintf(stderr, "Couldn't copy predecessors pointer for node %d\n", i); exit(-1);}
 	}
 
