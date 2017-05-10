@@ -252,14 +252,14 @@ __global__ void pivot(Node * graph, unsigned int * subgraph, unsigned int * pivo
 int main(int argc, char ** argv){
 
 	printf("Basic FWBW SCC v1.0\n");
-	
+	int option;
 	bool output = false;
 	char * out_file, * in_file;
 	bool trim = false;
 	unsigned int blocks = 0;
 	unsigned int threads = 0;		
 	
-	while ((int option = getopt(argc, argv, "o:tb:x:")) != -1) {
+	while ((option = getopt(argc, argv, "o:tb:x:")) != -1) {
 		switch (option) {
 			case 'o':
 				output = true;
@@ -269,10 +269,10 @@ int main(int argc, char ** argv){
 				trim = true;
 				break;
 			case 'b':
-				blocks = (unsigned int) optarg;
+				blocks = (unsigned int) atoi(optarg);
 				break;
 			case 'x':
-				threads = (unsigned int) optarg;
+				threads = (unsigned int) atoi(optarg);
 				break;
 			case '?':
 				if (optopt == 'o' || optopt == 'b' || optopt == 'x') {fprintf(stderr, "Option -%c requires an argument\n", optopt); exit(-1);}
@@ -410,8 +410,8 @@ int main(int argc, char ** argv){
 	while (!subgraphs.empty()){
 	
 		//take a subgraph off the stack	
-		h_subgraph = subgraphs.pop();
-		subgraph.pop();
+		h_subgraph = subgraphs.top();
+		subgraphs.pop();
 		if (cudaSuccess != cudaMemcpy(d_subgraph, &h_subgraph, sizeof(unsigned int), cudaMemcpyHostToDevice)) {fprintf(stderr, "Couldn't copy d_subgraph to device\n"); exit(-1);}
 
 		//reset it's forward and backward reachable attributes
