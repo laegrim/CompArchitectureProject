@@ -412,6 +412,8 @@ int main(int argc, char ** argv){
 		if (cudaSuccess != err) {fprintf(stderr, "Couldn't copy successors pointer for node %d\n", i); exit(-1);}
 		err = cudaMemcpy(&(d_graph[i].predecessors), &d_predecessor_array[pred_offset], sizeof(unsigned int *), cudaMemcpyHostToDevice);
 		if (cudaSuccess != err) {fprintf(stderr, "Couldn't copy predecessors pointer for node %d\n", i); exit(-1);}
+		pred_offset += graph[i].in_degree;
+		suc_offset += graph[i].out_degree;
 	}
 
 	//Start the kernel timer
