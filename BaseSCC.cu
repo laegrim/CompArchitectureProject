@@ -34,7 +34,7 @@ __global__ void bfs(Node * graph, unsigned int * finished, unsigned int * mode, 
 
 	unsigned int v = (blockIdx.x * blockDim.x) + threadIdx.x;
 
-	Node curr_node;
+	Node curr_node, neighbor;
 	
 	for (unsigned int i = v; i < d_num_nodes; i++) {
 		
@@ -48,10 +48,10 @@ __global__ void bfs(Node * graph, unsigned int * finished, unsigned int * mode, 
 				//for each of it's neighbors
 				for(int i = 0; i < curr_node.out_degree; i++){
 					//if the current node is forward reachable and the neighbor is in the subgraph
-					Node neighbor = graph[curr_node.successors[i]];
+					neighbor = graph[curr_node.successors[i]];
 					if (curr_node.fw_reachable && neighbor.subgraph == *subgraph) {
 						//tell it's neighbors they are forward reachable
-						old = atomicCAS(graph[curr_node.successors[i]].fw_reachable, 0, 1);
+						old = atomicCAS(&(graph[curr_node.successors[i]].fw_reachable), 0, 1);
 						//if something changed, we aren't at stasis
 						if (!old) {atomicCAS(finished, 1, 0);}
 					}
@@ -62,7 +62,7 @@ __global__ void bfs(Node * graph, unsigned int * finished, unsigned int * mode, 
 				for(int i = 0; i < curr_node.in_degree; i++){
 					if (curr_node.bw_reachable && neighbor.subgraph == *subgraph) {
 						//tell the neighbors they are backwards reachable
-						old = atomicCAS(graph[curr_node.predecessors[i]].bw_reachable, 0, 1);
+						old = atomicCAS(&(graph[curr_node.predecessors[i]].bw_reachable), 0, 1);
 						//if something changed, we aren't at stasis
 						if (!old) {atomicCAS(finished, 1, 0);}
 					}
@@ -90,10 +90,9 @@ __global__ void reset_bwfw_reachability(Node * graph){
 __global__ void trim(Node * graph, unsigned int * finished, int * subgraph) {
 
 	if (threadIdx.x == 0) {atomicCAS(finished, 0, 1);}
-	unsigned int old;
 
 	unsigned int v = (blockIdx.x * blockDim.x) + threadIdx.x;
-	Node curr_node;
+	Node curr_node, neighbor;
 	
 	for (unsigned int i = v; i < d_num_nodes; i++){
 		
@@ -106,7 +105,7 @@ __global__ void trim(Node * graph, unsigned int * finished, int * subgraph) {
 			for(int i = 0; i < curr_node.out_degree; i++){
 				neighbor = graph[curr_node.successors[i]];
 				if (neighbor.subgraph == *subgraph) {
-					old = atomicCAS(graph[curr_node.successors[i]].fw_reachable, 0, 1);
+					atomicCAS(graph[curr_node.successors[i]].fw_reachable, 0, 1);
 				}
 			}
 		}
@@ -219,7 +218,7 @@ __global__ void pivot(Node * graph, unsigned int * subgraph, unsigned int * pivo
 	unsigned int v = (blockIdx.x * blockDim.x) + threadIdx.x;
 	unsigned int votes;
 	unsigned int lowest;
-	unsigned int lane_id = threadIdx.x % x
+	unsigned int lane_id = threadIdx.x % 32;
 	Node curr_node;
 
 	for (unsigned int i = v; i < d_num_nodes; i++){
@@ -253,20 +252,20 @@ int main(int argc, char ** argv){
 
 	printf("Basic FWBW SCC v1.0\n");
 	
-	bool output = False;
+	bool output = false;
 	char * out_file, in_file;
-	bool trim = False;
+	bool trim = false;
 	unsigned int blocks = 0;
 	unsigned int threads = 0;		
 	
 	while ((option = getopt(argc, argv, "o:tb:x:")) != -1) {
 		switch (option) {
 			case 'o':
-				output = True;
+				output = true;
 				out_file = optarg;
 				break;
 			case 't':
-				trim = True;
+				trim = true;
 				break;
 			case 'b':
 				blocks = optarg;
