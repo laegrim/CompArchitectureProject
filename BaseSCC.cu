@@ -47,12 +47,12 @@ __global__ void bfs(Node * graph, unsigned int * finished, unsigned int * mode, 
 			//if mode == 0, it's a forward search
 			if (*mode == 0) {
 				//for each of it's neighbors
-				for(int i = 0; i < curr_node.out_degree; i++){
+				for(int j = 0; j < curr_node.out_degree; j++){
 					//if the current node is forward reachable and the neighbor is in the subgraph
-					neighbor = graph[curr_node.successors[i]];
+					neighbor = graph[curr_node.successors[j]];
 					if (curr_node.fw_reachable && neighbor.subgraph == *subgraph) {
 						//tell it's neighbors they are forward reachable
-						old = atomicCAS(&(graph[curr_node.successors[i]].fw_reachable), 0, 1);
+						old = atomicCAS(&(graph[curr_node.successors[j]].fw_reachable), 0, 1);
 						//if something changed, we aren't at stasis
 						if (!old) {atomicCAS(finished, 1, 0);}
 					}
@@ -60,10 +60,10 @@ __global__ void bfs(Node * graph, unsigned int * finished, unsigned int * mode, 
 			}
 			//mode is 1, and it's a backward search on the transpose graph
 			else {
-				for(int i = 0; i < curr_node.in_degree; i++){
+				for(int j = 0; j < curr_node.in_degree; j++){
 					if (curr_node.bw_reachable && neighbor.subgraph == *subgraph) {
 						//tell the neighbors they are backwards reachable
-						old = atomicCAS(&(graph[curr_node.predecessors[i]].bw_reachable), 0, 1);
+						old = atomicCAS(&(graph[curr_node.predecessors[j]].bw_reachable), 0, 1);
 						//if something changed, we aren't at stasis
 						if (!old) {atomicCAS(finished, 1, 0);}
 					}
@@ -103,10 +103,10 @@ __global__ void trim_kernel(Node * graph, unsigned int * finished, int * subgrap
 		//if the current node is in the subgraph
 		if (curr_node.subgraph == *subgraph) {
 			//visit each neighbor in the subgraph, telling them they are reachable
-			for(int i = 0; i < curr_node.out_degree; i++){
-				neighbor = graph[curr_node.successors[i]];
+			for(int j = 0; j < curr_node.out_degree; j++){
+				neighbor = graph[curr_node.successors[j]];
 				if (neighbor.subgraph == *subgraph) {
-					atomicCAS(&(graph[curr_node.successors[i]].fw_reachable), 0, 1);
+					atomicCAS(&(graph[curr_node.successors[j]].fw_reachable), 0, 1);
 				}
 			}
 		}
